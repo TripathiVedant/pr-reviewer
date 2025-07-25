@@ -5,6 +5,16 @@
 ### Prerequisites
 - Docker & Docker Compose (for containerized setup)
 
+### Redis and PostgreSQL URLs
+- **Redis URL (default):**
+  - `redis://localhost:6379/0` (for local development)
+  - `redis://redis:6379/0` (inside Docker Compose)
+- **PostgreSQL URL (default):**
+  - `postgresql+psycopg2://myuser:mypassword@localhost:5432/pr-review-db` (for local development)
+  - `postgresql+psycopg2://myuser:mypassword@db:5432/pr-review-db` (inside Docker Compose)
+
+You can configure these in your `.env` file.
+
 ### **Build and start all services:**
 - Add openai secret key in docker-compose.yml placeholder
 - ```bash
@@ -15,7 +25,59 @@
 ---
 
 ## API Documentation
+
 See the "API Interface Design" section below for detailed request/response examples for all endpoints.
+
+**Swagger/OpenAPI UI:**
+
+- Once the FastAPI server is running, access the interactive API docs at:  
+  [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## Example cURL Commands
+
+### Analyze PR
+```bash
+curl -X 'POST' \
+  'http://localhost:8000/analyze-pr?cached=false' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "platformType": "GITHUB",
+  "repo_url": "https://github.com/TripathiVedant/pr-reviewer/",
+  "pr_number": 1,
+  "token": "<your_github_token>"
+}'
+```
+
+### Get Task Status
+```bash
+curl -X 'GET' \
+  'http://localhost:8000/status/<task_id>' \
+  -H 'accept: application/json'
+```
+
+### Get Task Results
+```bash
+curl -X 'GET' \
+  'http://localhost:8000/results/<task_id>' \
+  -H 'accept: application/json'
+```
+
+### Get Latest PR Review Status
+```bash
+curl -X 'POST' \
+  'http://localhost:8000/pr-review-status/latest' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "platformType": "GITHUB",
+  "repo_url": "https://github.com/TripathiVedant/pr-reviewer/",
+  "pr_number": 1
+}'
+```
+
 ---
 
 ## Running Tests
