@@ -26,6 +26,7 @@ class SimpleLLMChainExecutor:
             return json.load(f)
 
     def build_chain(self, factor: str) -> Runnable:
+        # Prompts can be loaded from a database in future.
         prompt_text = self.prompts.get(factor)
         if not prompt_text:
             raise ValueError(f"No prompt found for factor: {factor}")
