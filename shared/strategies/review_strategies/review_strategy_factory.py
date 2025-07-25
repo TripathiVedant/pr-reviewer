@@ -1,7 +1,7 @@
 from shared.models.enums import ReviewStrategyName
 from shared.models.payloads import ReviewStrategyContext
-from shared.services.review_strategies.simple_llm_review_strategy import SimpleLLMReviewStrategy
-from shared.services.review_strategies.base import PRReviewStrategy
+from shared.strategies.review_strategies.simple_llm_review_strategy import SimpleLLMReviewStrategy
+from shared.strategies.review_strategies.base import PRReviewStrategy
 
 class ReviewStrategyFactory:
     @staticmethod

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from .enums import PlatformType, TaskStatus, ReviewStrategyName, ReviewFactor, ErrorCode
+from .enums import PlatformType, TaskStatus, ReviewStrategyName, ReviewFactor, ErrorCode, ReviewFactor
 
 class AnalyzePRRequest(BaseModel):
     platformType: PlatformType
@@ -32,10 +32,15 @@ class TaskStatusResponse(BaseModel):
     status: TaskStatus
 
 class Issue(BaseModel):
-    type: str
+    type: ReviewFactor
+    subtype: str
     line: int
     description: str
     suggestion: str
+
+class ErrorResult(BaseModel):
+    error: str
+    error_code: ErrorCode = ErrorCode.UNKNOWN
 
 class FileResult(BaseModel):
     name: str
@@ -49,10 +54,7 @@ class Summary(BaseModel):
 class AnalysisResults(BaseModel):
     files: List[FileResult]
     summary: Summary
-
-class ErrorResult(BaseModel):
-    error: str
-    error_code: ErrorCode = ErrorCode.UNKNOWN
+    errors: Optional[List[ErrorResult]] = []
 
 # For unified PR review status & result
 class PRReviewStatusResponse(BaseModel):

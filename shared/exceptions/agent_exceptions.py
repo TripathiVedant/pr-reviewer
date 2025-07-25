@@ -17,3 +17,7 @@ class AgentLLMException(AgentException):
 class AgentTimeoutException(AgentException):
     def __init__(self, message: str):
         super().__init__(message, ErrorCode.AGENT_TIMEOUT)
+
+class AgentOutputParseException(AgentException):
+    def __init__(self, message: str):
+        super().__init__(message, ErrorCode.AGENT_OUTPUT_PARSE_ERROR)

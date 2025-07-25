@@ -1,4 +1,4 @@
-from shared.services.review_strategies.base import PRReviewStrategy
+from shared.strategies.review_strategies.base import PRReviewStrategy
 from shared.models.payloads import SimpleLLMReviewStrategyContext
 from review_agents.simple_llm_review_agent import SimpleLLMPrReviewAgent
 from typing import Dict, Any, List
