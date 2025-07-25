@@ -1,25 +1,25 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from .enums import PlatformType, TaskStatus
+from .enums import PlatformType, TaskStatus, ReviewStrategyName, ReviewFactor, ErrorCode
 
 class AnalyzePRRequest(BaseModel):
     platformType: PlatformType
     repo_url: str
     pr_number: int
-    github_token: Optional[str] = None
+    token: Optional[str] = None
 
 class PRReviewStatusRequest(BaseModel):
     platformType: PlatformType
     repo_url: str
     pr_number: int
-    github_token: Optional[str] = None
+    token: Optional[str] = None
 
 class AnalyzePRTaskPayload(BaseModel):
     task_id: str
     platformType: PlatformType
     repo_url: str
     pr_number: int
-    github_token: Optional[str] = None
+    token: Optional[str] = None
     status: TaskStatus
 
 class AnalyzePRResponse(BaseModel):
@@ -52,6 +52,7 @@ class AnalysisResults(BaseModel):
 
 class ErrorResult(BaseModel):
     error: str
+    error_code: ErrorCode = ErrorCode.UNKNOWN
 
 # For unified PR review status & result
 class PRReviewStatusResponse(BaseModel):
@@ -62,3 +63,13 @@ class PRReviewStatusResponse(BaseModel):
 class ErrorResponse(BaseModel):
     error: str
     status_code: int
+
+class ReviewStrategyContext:
+    def __init__(self, strategy_name: ReviewStrategyName):
+        self.strategy_name = strategy_name
+
+
+class SimpleLLMReviewStrategyContext(ReviewStrategyContext):
+    def __init__(self, factors: List[ReviewFactor]):
+        super().__init__(strategy_name=ReviewStrategyName.SIMPLE_LLM)
+        self.factors = factors

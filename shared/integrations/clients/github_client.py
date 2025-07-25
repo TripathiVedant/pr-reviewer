@@ -1,39 +1,46 @@
-import requests
-from typing import Any, Dict, Optional
 import logging
+import requests
+from typing import Optional, Any
+from shared.utils.github_errors_utils import handle_http_error
 
 logger = logging.getLogger(__name__)
+
 
 class GitHubClient:
     """
     Client for GitHub API.
     """
-    def __init__(self, token: Optional[str] = None):
-        logger.info(f"[DEBUG] Token in GitHubClient.__init__: {token}")
+    def __init__(self):
         self.base_url = "https://api.github.com"
-        self.headers = {"Accept": "application/vnd.github.v3+json"}
-        if token:
-            self.headers["Authorization"] = f"token {token}"
 
-    def get_pr_files(self, owner: str, repo: str, pr_number: int) -> Any:
+    def _make_headers(self, token: Optional[str], accept: str = "application/vnd.github.v3+json") -> dict:
+        headers = {"Accept": accept}
+        if token:
+            headers["Authorization"] = f"token {token}"
+        return headers
+
+    def get_pr_files(self, owner: str, repo: str, pr_number: int, token: Optional[str]) -> Any:
         url = f"{self.base_url}/repos/{owner}/{repo}/pulls/{pr_number}/files"
+        headers = self._make_headers(token)
         try:
-            resp = requests.get(url, headers=self.headers)
+            resp = requests.get(url, headers=headers)
             resp.raise_for_status()
             return resp.json()
         except requests.HTTPError as e:
-            logger.error(f"Status code: {resp.status_code}, Response: {resp.text}, Headers: {resp.headers}")
-            raise
+            logger.error(
+                f"[GitHub API Error] | repos: {repo} | owner: {owner} | pr_number: {pr_number} | URL: {url} | HTTPError: {e}"
+            )
+            handle_http_error(e)
 
-
-    def get_pr_diff(self, owner: str, repo: str, pr_number: int) -> str:
+    def get_pr_diff(self, owner: str, repo: str, pr_number: int, token: Optional[str]) -> str:
         url = f"{self.base_url}/repos/{owner}/{repo}/pulls/{pr_number}"
-        diff_headers = self.headers.copy()
-        diff_headers["Accept"] = "application/vnd.github.v3.diff"
+        headers = self._make_headers(token, accept="application/vnd.github.v3.diff")
         try:
-            resp = requests.get(url, headers=diff_headers)
+            resp = requests.get(url, headers=headers)
             resp.raise_for_status()
             return resp.text
         except requests.HTTPError as e:
-            logger.error(f"Status code: {resp.status_code}, Response: {resp.text}, Headers: {resp.headers}")
-            raise 
+            logger.error(
+                f"[GitHub API Error] | repos: {repo} | owner: {owner} | pr_number: {pr_number} | URL: {url} | HTTPError: {e}"
+            )
+            handle_http_error(e)
