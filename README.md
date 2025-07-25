@@ -7,8 +7,8 @@
 
 ### Redis and PostgreSQL URLs
 - **Redis URL (default):**
-  - `redis://localhost:6379/0` (for local development)
-  - `redis://redis:6379/0` (inside Docker Compose)
+  - `redis://localhost:6379` (for local development)
+  - `redis://redis:6379` (inside Docker Compose)
 - **PostgreSQL URL (default):**
   - `postgresql+psycopg2://myuser:mypassword@localhost:5432/pr-review-db` (for local development)
   - `postgresql+psycopg2://myuser:mypassword@db:5432/pr-review-db` (inside Docker Compose)
