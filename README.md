@@ -1,3 +1,103 @@
+# Reviewer PR Analysis System
+
+## Project Setup
+
+### Prerequisites
+- Docker & Docker Compose (for containerized setup)
+
+### Redis and PostgreSQL URLs
+- **Redis URL (default):**
+  - `redis://localhost:6379/0` (for local development)
+  - `redis://redis:6379/0` (inside Docker Compose)
+- **PostgreSQL URL (default):**
+  - `postgresql+psycopg2://myuser:mypassword@localhost:5432/pr-review-db` (for local development)
+  - `postgresql+psycopg2://myuser:mypassword@db:5432/pr-review-db` (inside Docker Compose)
+
+You can configure these in your `.env` file.
+
+### **Build and start all services:**
+- Add openai secret key in docker-compose.yml placeholder
+- ```bash
+   docker-compose up --build
+   ``` 
+   while in the root directory.
+   This will start FastAPI, Celery worker, Redis, and PostgreSQL.
+---
+
+## API Documentation
+
+See the "API Interface Design" section below for detailed request/response examples for all endpoints.
+
+**Swagger/OpenAPI UI:**
+
+- Once the FastAPI server is running, access the interactive API docs at:  
+  [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## Example cURL Commands
+
+### Analyze PR
+```bash
+curl -X 'POST' \
+  'http://localhost:8000/analyze-pr?cached=false' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "platformType": "GITHUB",
+  "repo_url": "https://github.com/TripathiVedant/pr-reviewer/",
+  "pr_number": 1,
+  "token": "<your_github_token>"
+}'
+```
+
+### Get Task Status
+```bash
+curl -X 'GET' \
+  'http://localhost:8000/status/<task_id>' \
+  -H 'accept: application/json'
+```
+
+### Get Task Results
+```bash
+curl -X 'GET' \
+  'http://localhost:8000/results/<task_id>' \
+  -H 'accept: application/json'
+```
+
+### Get Latest PR Review Status
+```bash
+curl -X 'POST' \
+  'http://localhost:8000/pr-review-status/latest' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "platformType": "GITHUB",
+  "repo_url": "https://github.com/TripathiVedant/pr-reviewer/",
+  "pr_number": 1
+}'
+```
+
+---
+
+## Running Tests
+
+1. **Install test dependencies:**
+    Run following commands in sequencial manner
+   ```bash
+   pip install virtualenv
+   virtualenv venv
+   source venv/bin/activate
+   pip install -r pr_review_app/requirements.txt
+   pip install -r celery_worker/requirements.txt
+   ```
+2. **Run all tests:**
+   ```bash
+   pytest
+   ```
+
+---
+
 # Technical Design Document
 
 ## Functional Requirements
@@ -172,15 +272,19 @@
 Triggers an analysis task for the given pull request.
 
 #### Request:
+Param: 
+```cached: boolean```
+Body:
 ```json
 {
   "platformType": "GITHUB",
   "repo_url": "https://github.com/user/repo",
   "pr_number": 123,
-  "github_token": "optional_token"
+  "token": "optional_token"
 }
 ```
-This request will be polymorphic in future.
+This request will be polymorphic in future. If cached == true, this will return latest task_id of completed task for given PR.
+Note that if any request is under process or pending, it will not be queued again and task_id of older task will be returned.
 
 #### Response (Success):
 ```json
@@ -269,7 +373,7 @@ Retrieves the results of a completed analysis task.
 ---
 
 ### 4. GET `/pr-review-status`
-Fetches the status and results of a pull request analysis task if it exists.
+Fetches the status and results of a latest pull request analysis task if it exists.
 
 #### Request:
 ```json
