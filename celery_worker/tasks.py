@@ -1,7 +1,9 @@
 from shared.dao.task_dao import TaskDAO
-from shared.models.enums import TaskStatus
+from shared.models.enums import TaskStatus, PlatformType
 from .celery_app import celery_app
 import logging
+from shared.integrations.github_fetcher import GitHubPRFetcher
+from shared.integrations.platform_factory import PlatformFetcherFactory
 
 logger = logging.getLogger("celery_worker.tasks")
 
@@ -40,22 +42,27 @@ def analyze_pr_task(request_data):
         TaskDAO.update_status(task_id=task_id, status=TaskStatus.PROCESSING)
         logger.info(f"Task {task_id} status updated to PROCESSING")
 
-        # Step 4: Fetch PR data from GitHub (mocked for now)
-        pr_data = {"repo_url": task.repo_url, "pr_number": task.pr_number}
-        logger.info(f"Fetched PR data for repo {pr_data['repo_url']} and PR {pr_data['pr_number']}")
+        # Step 4: Fetch PR data using platform abstraction
+        platform_type = getattr(task, 'platformType', None)
+        repo_url = getattr(task, 'repo_url', None)
+        pr_number = getattr(task, 'pr_number', None)
+        github_token = getattr(task, 'github_token', None)
+
+        fetcher = PlatformFetcherFactory.get_fetcher(platform_type)
+        pr_data = fetcher.fetch_pr_data(repo_url, pr_number, github_token)
+        logger.info(f"Fetched PR data for repo {repo_url} and PR {pr_number}")
 
         # Step 5: Run AI code analysis (mocked for now)
         results = {
             "summary": {
-                "total_files": 3,
+                "total_files": len(pr_data.get("files", [])),
                 "total_issues": 10,
                 "critical_issues": 2,
             },
             "files": [
-                {"name": "file1.py", "issues": [{"line": 10, "type": "critical", "description": "Bug detected"}]},
-                {"name": "file2.py", "issues": []},
-                {"name": "file3.py", "issues": [{"line": 20, "type": "warning", "description": "Optimization needed"}]},
+                {"name": f.get("filename", "file.py"), "issues": []} for f in pr_data.get("files", [])
             ],
+            "diff": pr_data.get("diff", "")
         }
         logger.info(f"Code analysis completed for task {task_id}")
 
