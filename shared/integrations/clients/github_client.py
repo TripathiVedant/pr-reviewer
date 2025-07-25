@@ -1,7 +1,7 @@
 import logging
 import requests
 from typing import Optional, Any
-from utils.github_errors_utils import handle_http_error
+from shared.utils.github_errors_utils import handle_http_error
 
 logger = logging.getLogger(__name__)
 
