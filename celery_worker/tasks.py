@@ -1,13 +1,21 @@
+import asyncio
 from shared.dao.task_dao import TaskDAO
-from shared.models.enums import TaskStatus
+from shared.models.enums import TaskStatus, ErrorCode
+from shared.models.payloads import ErrorResult
 from .celery_app import celery_app
 import logging
+from shared.integrations.platform_factory import PlatformFetcherFactory
+from shared.models.enums import ReviewFactor
+from shared.models.payloads import SimpleLLMReviewStrategyContext
+from shared.strategies.review_strategies.review_strategy_factory import ReviewStrategyFactory
+from shared.exceptions.fetcher_exceptions import FetcherException
 
-logger = logging.getLogger("celery_worker.tasks")
+logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name="celery_worker.tasks.analyze_pr_task")
 def analyze_pr_task(request_data):
+    logger.info(f"event: analyze_pr_task, msg: Starting for Identifier: request_data={request_data}")
     """
     Celery task for analyzing a Pull Request.
 
@@ -21,49 +29,59 @@ def analyze_pr_task(request_data):
         4. Run AI code analysis.
         5. Store results and update task status in a single DAO method.
     """
-    logger.info(f"Received analyze_pr_task with data: {request_data}")
-
-    # Step 1: Validate payload
-    task_id = request_data.get("task_id")
-    if not task_id:
-        logger.error("Task ID is missing in the payload")
-        return
+    try:
+        # Step 1: Validate payload
+        task_id = request_data.get("task_id")
+        if not task_id:
+            logger.error("event: analyze_pr_task, msg: Error for Identifier: task_id=None, error=Task ID is missing in the payload")
+            return
 
         # Step 2: Fetch task from DB
-    task = TaskDAO.get_by_id(task_id)
-    if not task:
-        logger.error(f"Task with ID {task_id} not found in the database")
-        return
+        task = TaskDAO.get_by_id(task_id)
+        if not task:
+            logger.error(f"event: analyze_pr_task, msg: Error for Identifier: task_id={task_id}, error=Task with ID not found in the database")
+            return
 
-    try:
         # Step 3: Update task status to PROCESSING
         TaskDAO.update_status(task_id=task_id, status=TaskStatus.PROCESSING)
         logger.info(f"Task {task_id} status updated to PROCESSING")
 
-        # Step 4: Fetch PR data from GitHub (mocked for now)
-        pr_data = {"repo_url": task.repo_url, "pr_number": task.pr_number}
-        logger.info(f"Fetched PR data for repo {pr_data['repo_url']} and PR {pr_data['pr_number']}")
+        # Step 4: Fetch PR data using platform abstraction, 
+        # Todo: can be moved to inside fetcher class and turned into polymorphic dto.
+        platform_type = getattr(task, 'platformType', None)
+        repo_url = getattr(task, 'repo_url', None)
+        pr_number = getattr(task, 'pr_number', None)
+        token = request_data.get('token', None)
+
+        fetcher = PlatformFetcherFactory.get_fetcher(platform_type)
+        pr_data = fetcher.fetch_pr_data(repo_url, pr_number, token)
+        logger.info(f"Fetched PR data for repo {repo_url} and PR {pr_number}")
 
         # Step 5: Run AI code analysis (mocked for now)
-        results = {
-            "summary": {
-                "total_files": 3,
-                "total_issues": 10,
-                "critical_issues": 2,
-            },
-            "files": [
-                {"name": "file1.py", "issues": [{"line": 10, "type": "critical", "description": "Bug detected"}]},
-                {"name": "file2.py", "issues": []},
-                {"name": "file3.py", "issues": [{"line": 20, "type": "warning", "description": "Optimization needed"}]},
-            ],
-        }
+        # Hardcoded review factors for now — can be made configurable per task/request in the future
+        factors = [
+            ReviewFactor.CODE_STYLE,
+            ReviewFactor.BUGS,
+            ReviewFactor.PERFORMANCE,
+            ReviewFactor.BEST_PRACTICES,
+        ]
+
+        # Can use other strategies as well, based on different factors/requests.
+        context = SimpleLLMReviewStrategyContext(factors=factors)
+        review_strategy = ReviewStrategyFactory.get_strategy(context)
+        review_output = asyncio.run(review_strategy.review(pr_data["diff"], pr_data["files"], context))
+        result = review_output.model_dump()
+        
         logger.info(f"Code analysis completed for task {task_id}")
 
         # Step 6: Store results and update task status using DAO
-        TaskDAO.store_results_and_update_status(task_id=task_id, results=results, status=TaskStatus.COMPLETED)
-
+        TaskDAO.store_results_and_update_status(task_id=task_id, results=result, status=TaskStatus.COMPLETED)
+        logger.info(f"event: analyze_pr_task, msg: Returning for Identifier: task_id={task_id}")
+    except FetcherException as fetch_exception:
+        logger.error(f"Fetcher exception: {fetch_exception}")
+        error_result = ErrorResult(error=str(fetch_exception), error_code=fetch_exception.error_code).model_dump()
+        TaskDAO.store_results_and_update_status(task_id=task_id, results=error_result, status=TaskStatus.FAILED)
     except Exception as e:
-        logger.error(f"Error processing task {task_id}: {e}")
-
-        # Update task status to FAILED in case of error
-        TaskDAO.update_status(task_id=task_id, status=TaskStatus.FAILED)
+        logger.error(f"event: analyze_pr_task, msg: Error for Identifier: task_id={request_data.get('task_id', None)}, error={e}")
+        error_result = ErrorResult(error=str(e), error_code=ErrorCode.UNKNOWN).model_dump()
+        TaskDAO.store_results_and_update_status(task_id=task_id, results=error_result, status=TaskStatus.FAILED)

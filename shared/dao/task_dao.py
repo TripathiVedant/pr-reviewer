@@ -3,7 +3,7 @@ from shared.domains.domains import Task, TaskResult
 from shared.models.enums import TaskStatus
 import logging
 
-logger = logging.getLogger("task_dao")
+logger = logging.getLogger(__name__)
 
 
 class TaskDAO:
@@ -37,6 +37,23 @@ class TaskDAO:
                 .first()
             )
 
+    @staticmethod
+    def get_by_repo_pr_and_status(repo_url: str, pr_number: int, status: TaskStatus) -> Task | None:
+        with SessionLocal() as session:
+            return (
+                session.query(Task)
+                .filter(Task.repo_url == repo_url, Task.pr_number == pr_number, Task.status == status)
+                .first()
+            )
+
+    @staticmethod
+    def get_completed_by_repo_pr(repo_url: str, pr_number: int) -> Task | None:
+        with SessionLocal() as session:
+            return (
+                session.query(Task)
+                .filter(Task.repo_url == repo_url, Task.pr_number == pr_number, Task.status == TaskStatus.COMPLETED)
+                .first()
+            )
 
     @staticmethod
     def store_results_and_update_status(task_id: str, results: dict, status: TaskStatus):
