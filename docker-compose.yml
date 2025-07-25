@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./fastapi_app:/app/fastapi_app
+      - ./pr_review_app:/app/pr_review_app
       - ./shared:/app/shared
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -17,7 +17,7 @@ services:
       - redis
       - celery_worker
       - db
-    command: uvicorn fastapi_app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn pr_review_app.main:app --log-config logging_config.json --host 0.0.0.0 --port 8000 --reload
 
   celery_worker:
     build:

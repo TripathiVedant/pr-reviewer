@@ -1,18 +1,17 @@
-from shared.models.requests import AnalyzePRRequest
-from shared.domains.domains import Task, TaskResult
-from shared.models.enums import TaskStatus
-from datetime import datetime
+from shared.domains.domains import Task
+from shared.models.payloads import AnalyzePRRequest
+import uuid
+from datetime import datetime, UTC
 
-# Mapper: Pydantic AnalyzePRRequest -> ORM Task
 
-def analyze_pr_request_to_task(request: AnalyzePRRequest) -> Task:
+def map_analyze_pr_request_to_task(request: AnalyzePRRequest) -> Task:
+    """Map an AnalyzePRRequest to a Task entity."""
     return Task(
+        task_id=str(uuid.uuid4()),
         platformType=request.platformType,
         repo_url=request.repo_url,
         pr_number=request.pr_number,
-        status=TaskStatus.PENDING,
+        status="PENDING",
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow()
     )
-
-# Mapper: ORM TaskResult <-> Pydantic (add as needed) 
