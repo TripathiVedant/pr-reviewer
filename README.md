@@ -1,3 +1,41 @@
+# Reviewer PR Analysis System
+
+## Project Setup
+
+### Prerequisites
+- Docker & Docker Compose (for containerized setup)
+
+### **Build and start all services:**
+- Add openai secret key in docker-compose.yml placeholder
+- ```bash
+   docker-compose up --build
+   ``` 
+   while in the root directory.
+   This will start FastAPI, Celery worker, Redis, and PostgreSQL.
+---
+
+## API Documentation
+See the "API Interface Design" section below for detailed request/response examples for all endpoints.
+---
+
+## Running Tests
+
+1. **Install test dependencies:**
+    Run following commands in sequencial manner
+   ```bash
+   pip install virtualenv
+   virtualenv venv
+   source venv/bin/activate
+   pip install -r pr_review_app/requirements.txt
+   pip install -r celery_worker/requirements.txt
+   ```
+2. **Run all tests:**
+   ```bash
+   pytest
+   ```
+
+---
+
 # Technical Design Document
 
 ## Functional Requirements
@@ -172,15 +210,19 @@
 Triggers an analysis task for the given pull request.
 
 #### Request:
+Param: 
+```cached: boolean```
+Body:
 ```json
 {
   "platformType": "GITHUB",
   "repo_url": "https://github.com/user/repo",
   "pr_number": 123,
-  "github_token": "optional_token"
+  "token": "optional_token"
 }
 ```
-This request will be polymorphic in future.
+This request will be polymorphic in future. If cached == true, this will return latest task_id of completed task for given PR.
+Note that if any request is under process or pending, it will not be queued again and task_id of older task will be returned.
 
 #### Response (Success):
 ```json
@@ -269,7 +311,7 @@ Retrieves the results of a completed analysis task.
 ---
 
 ### 4. GET `/pr-review-status`
-Fetches the status and results of a pull request analysis task if it exists.
+Fetches the status and results of a latest pull request analysis task if it exists.
 
 #### Request:
 ```json

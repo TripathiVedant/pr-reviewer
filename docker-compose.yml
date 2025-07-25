@@ -11,6 +11,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - DATABASE_URL=postgresql+psycopg2://myuser:mypassword@db:5432/pr-review-db
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - OPENAI_API_KEY=<<OPENAI_API_KEY>>
     ports:
       - "8000:8000"
     depends_on:
@@ -26,10 +27,15 @@ services:
     volumes:
       - ./celery_worker:/app/celery_worker
       - ./shared:/app/shared
+      - ./review_agents:/app/review_agents
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - DATABASE_URL=postgresql+psycopg2://myuser:mypassword@db:5432/pr-review-db
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PORTKEY_API_KEY=your-portkey-key-here
+      - OPENAI_API_KEY=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
+      - USE_PORTKEY=false
+      - PYTHONPATH=/app
     depends_on:
       - redis
       - db
