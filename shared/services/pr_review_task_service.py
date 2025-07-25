@@ -26,13 +26,13 @@ class PRReviewTaskService:
             platformType=task.platformType,
             repo_url=task.repo_url,
             pr_number=task.pr_number,
-            github_token=request.github_token,
+            token=request.token,
             status=TaskStatus.PENDING,
         )
 
         # Send payload to Celery worker
-        logger.info(f"Payload sent to Celery: {payload.dict()}")
-        celery_app.send_task("celery_worker.tasks.analyze_pr_task", args=[payload.dict()], task_id=task.task_id)
+        logger.info(f"Payload sent to Celery: {payload.model_dump()}")
+        celery_app.send_task("celery_worker.tasks.analyze_pr_task", args=[payload.model_dump()], task_id=task.task_id)
 
         logger.info(f"Enqueued Celery task with task_id={task.task_id}")
         return task.task_id

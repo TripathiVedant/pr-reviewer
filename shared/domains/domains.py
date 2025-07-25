@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Integer, Enum, DateTime, ForeignKey, JSON
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from shared.models.enums import PlatformType, TaskStatus
 import uuid
 from datetime import datetime

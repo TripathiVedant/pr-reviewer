@@ -1,10 +1,11 @@
 from shared.dao.task_dao import TaskDAO
-from shared.models.enums import TaskStatus, PlatformType
+from shared.models.enums import TaskStatus, PlatformType, ErrorCode
 from shared.models.payloads import ErrorResult
 from .celery_app import celery_app
 import logging
 from shared.integrations.github_fetcher import GitHubPRFetcher
 from shared.integrations.platform_factory import PlatformFetcherFactory
+from shared.exceptions.fetcher_exceptions import FetcherException
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +49,10 @@ def analyze_pr_task(request_data):
         platform_type = getattr(task, 'platformType', None)
         repo_url = getattr(task, 'repo_url', None)
         pr_number = getattr(task, 'pr_number', None)
-        github_token = request_data.get('github_token', None)
+        token = request_data.get('token', None)
 
         fetcher = PlatformFetcherFactory.get_fetcher(platform_type)
-        pr_data = fetcher.fetch_pr_data(repo_url, pr_number, github_token)
+        pr_data = fetcher.fetch_pr_data(repo_url, pr_number, token)
         logger.info(f"Fetched PR data for repo {repo_url} and PR {pr_number}, data: {pr_data}")
 
         # Step 5: Run AI code analysis (mocked for now)
@@ -71,8 +72,11 @@ def analyze_pr_task(request_data):
         # Step 6: Store results and update task status using DAO
         TaskDAO.store_results_and_update_status(task_id=task_id, results=results, status=TaskStatus.COMPLETED)
 
+    except FetcherException as fetch_exception:
+        logger.error(f"Fetcher exception: {fetch_exception}")
+        error_result = ErrorResult(error=str(fetch_exception), error_code=fetch_exception.error_code).model_dump()
+        TaskDAO.store_results_and_update_status(task_id=task_id, results=error_result, status=TaskStatus.FAILED)
     except Exception as e:
         logger.error(f"Error processing task {task_id}: {e}")
-        # Store error details in TaskResult and update task status to FAILED
-        error_result = ErrorResult(error=str(e)).dict()
+        error_result = ErrorResult(error=str(e), error_code=ErrorCode.UNKNOWN).model_dump()
         TaskDAO.store_results_and_update_status(task_id=task_id, results=error_result, status=TaskStatus.FAILED)
