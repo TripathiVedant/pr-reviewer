@@ -1,0 +1,6 @@
+{
+  "code_style": "You are a code review assistant. Review the following code for style and formatting violations (e.g., PEP-8). Be concise but clear.\n\nCode:\n{code}",
+  "bugs": "Review the following code and identify potential bugs, exceptions, or logic errors. Explain your reasoning.\n\nCode:\n{code}",
+  "performance": "Review the following code for any performance bottlenecks or optimization opportunities. Suggest improvements.\n\nCode:\n{code}",
+  "best_practices": "Review the following code for adherence to software engineering best practices. Highlight areas that could be improved.\n\nCode:\n{code}"
+}
