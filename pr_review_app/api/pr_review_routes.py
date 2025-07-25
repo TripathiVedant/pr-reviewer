@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from shared.models.enums import CeleryTaskNames, TaskStatus
 from shared.models.payloads import AnalyzePRRequest, PRReviewStatusRequest,  AnalyzePRResponse, TaskStatusResponse, PRReviewStatusResponse, ErrorResponse
 
@@ -12,11 +12,9 @@ ROUTE_HEALTH = "/health"
 ROUTE_ANALYZE_PR = "/analyze-pr"
 ROUTE_STATUS = "/status/{task_id}"
 ROUTE_RESULTS = "/results/{task_id}"
-ROUTE_PR_REVIEW_STATUS = "/pr-review-status"
+ROUTE_PR_REVIEW_STATUS = "/pr-review-status/latest"
 
-logger = logging.getLogger("pr_review_app")
-print(logger.getEffectiveLevel())  # Should print 20 (INFO level)
-print(logger.handlers)  # Check if any handlers are attached
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -31,10 +29,10 @@ def health_check():
     response_model=AnalyzePRResponse,
     responses={400: {"model": ErrorResponse}},
 )
-def analyze_pr(request: AnalyzePRRequest):
-    logger.info(f"Received analyze-pr request for repo {request.repo_url} and PR {request.pr_number}")
-    task_id = PRReviewTaskService.enqueue_analysis_task(request)
-    return AnalyzePRResponse(task_id=task_id, status="PENDING")
+def analyze_pr(request: AnalyzePRRequest, cached: bool = Query(False, description="Return cached result if available")):
+    logger.info(f"Received analyze-pr request for repo {request.repo_url} and PR {request.pr_number}, cached={cached}")
+    task_id, status = PRReviewTaskService.analyze_pr_with_cache_logic(request, cached)
+    return AnalyzePRResponse(task_id=task_id, status=status)
 
 
 @router.get(

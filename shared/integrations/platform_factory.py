@@ -4,6 +4,9 @@ from .github_fetcher import GitHubPRFetcher
 # from .bitbucket_fetcher import BitbucketPRFetcher  # For future
 
 class PlatformFetcherFactory:
+    """
+    Factory class to get the appropriate platform fetcher based on the platform type.
+    """
     @staticmethod
     def get_fetcher(platform_type: PlatformType):
         if platform_type == PlatformType.GITHUB:

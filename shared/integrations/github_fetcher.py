@@ -1,6 +1,6 @@
 import requests
 from typing import Any, Dict
-from .platform_base import PlatformPRFetcher
+from .platform_pr_fetcher import PlatformPRFetcher
 from .clients.github_client import GitHubClient
 
 class GitHubPRFetcher(PlatformPRFetcher):

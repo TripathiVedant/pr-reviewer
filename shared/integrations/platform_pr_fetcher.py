@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict
 
 class PlatformPRFetcher(ABC):
+    """
+    Abstract base class for platform PR fetcher. (platform can be github, gitlab, bitbucket, etc.)
+    """
     @abstractmethod
     def fetch_pr_data(self, repo_url: str, pr_number: int, token: str | None = None) -> Dict[str, Any]:
         """

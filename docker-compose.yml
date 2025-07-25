@@ -17,7 +17,7 @@ services:
       - redis
       - celery_worker
       - db
-    command: uvicorn pr_review_app.main:app --log-config logging_config.json --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn pr_review_app.main:app --log-config pr_review_app/config/logging_config.json --host 0.0.0.0 --port 8000 --reload
 
   celery_worker:
     build:

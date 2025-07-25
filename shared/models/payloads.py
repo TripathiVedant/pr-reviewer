@@ -50,11 +50,14 @@ class AnalysisResults(BaseModel):
     files: List[FileResult]
     summary: Summary
 
+class ErrorResult(BaseModel):
+    error: str
+
 # For unified PR review status & result
 class PRReviewStatusResponse(BaseModel):
     task_id: str
     status: TaskStatus
-    results: Optional[AnalysisResults] = None
+    results: Optional[AnalysisResults | ErrorResult] = None
 
 class ErrorResponse(BaseModel):
     error: str
