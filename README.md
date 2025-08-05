@@ -47,7 +47,8 @@ curl -X 'POST' \
   "platformType": "GITHUB",
   "repo_url": "https://github.com/TripathiVedant/pr-reviewer/",
   "pr_number": 1,
-  "token": "<your_github_token>"
+  "token": "<your_github_token>",
+  "pr_review_strategy": "complicated_llm_strategy"
 }'
 ```
 
@@ -222,6 +223,8 @@ curl -X 'POST' \
   - **Prompt Manager:** Decoupled prompts (currently in a JSON file).
   - **Analyzer:** Runs AI-based analysis.
   - **Result Formatter (Optional):** Formats results into the expected JSON structure.
+- Pluggable PR Review Strategies that use their own agenting flow.
+- Puggable Code parsers to create tree and pass relevant context to LLM.
 
 ### Error Handling
 - **2 Types of Errors:**
