@@ -1,12 +1,26 @@
 from celery import Celery
 from shared.config import settings
 
-celery_app = Celery('celery_worker', broker=settings.CELERY_BROKER_URL, backend=settings.CELERY_RESULT_BACKEND)
+# Configuration constants
+BROKER_URL = settings.CELERY_BROKER_URL
+RESULT_BACKEND = settings.CELERY_RESULT_BACKEND
+WORKER_CONCURRENCY = settings.WORKER_CONCURRENCY
+TASK_TIME_LIMIT = settings.TASK_TIME_LIMIT
+# WORKER_PREFETCH_MULTIPLIER = 1  # Uncomment if you want more even distribution
 
-app = celery_app  # Expose as 'app' for Celery CLI autodiscovery
+# Create and configure Celery application
+app = Celery(
+    'celery_worker',
+    broker=BROKER_URL,
+    backend=RESULT_BACKEND
+)
 
-worker_concurrency = settings.WORKER_CONCURRENCY
-# worker_prefetch_multiplier = 1  # Improves task distribution among workers. (In our case, we have only 1 worker)
-TASK_TIME_LIMIT = settings.TASK_TIME_LIMIT 
+# Apply settings from constants
+app.conf.update(
+    worker_concurrency=WORKER_CONCURRENCY,
+    task_time_limit=TASK_TIME_LIMIT,
+    # worker_prefetch_multiplier=WORKER_PREFETCH_MULTIPLIER,
+)
 
-celery_app.autodiscover_tasks(['celery_worker']) 
+# Auto-discover tasks in the given packages
+app.autodiscover_tasks(['celery_worker'])

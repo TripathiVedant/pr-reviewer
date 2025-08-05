@@ -24,6 +24,7 @@ class PRReviewTaskService:
                 pr_number=task.pr_number,
                 token=request.token,
                 status=TaskStatus.PENDING,
+                pr_review_strategy=request.pr_review_strategy.value
             )
             logger.info(f"event: enqueue_analysis_task, msg: Payload sent to Celery for Identifier: task_id={task.task_id}")
             celery_app.send_task("celery_worker.tasks.analyze_pr_task", args=[payload.model_dump()], task_id=task.task_id)
