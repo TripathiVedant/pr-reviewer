@@ -1,6 +1,22 @@
 {
-  "code_style": "You are a code review assistant. Review the following code for style and formatting violations (e.g., PEP-8). Be concise but clear.\n\nCode:\n{code}",
-  "bugs": "Review the following code and identify potential bugs, exceptions, or logic errors. Explain your reasoning.\n\nCode:\n{code}",
-  "performance": "Review the following code for any performance bottlenecks or optimization opportunities. Suggest improvements.\n\nCode:\n{code}",
-  "best_practices": "Review the following code for adherence to software engineering best practices. Highlight areas that could be improved.\n\nCode:\n{code}"
+  "code_style": {
+    "simple": "You are a code review assistant. Review the following code for style and formatting violations (e.g., PEP-8). Be concise but clear.\n\nCode:\n{code}",
+    "complex": "Function Name:\n{function}\n\nContext:\n{context}\n\nDiff Summary:\n{diff_summary}\n\nNow review the function above for style violations (e.g., PEP-8). Be concise but clear."
+  },
+  "bugs": {
+    "simple": "Review the following code and identify potential bugs, exceptions, or logic errors. Explain your reasoning.\n\nCode:\n{code}",
+    "complex": "Function Name:\n{function}\n\nContext:\n{context}\n\nDiff Summary:\n{diff_summary}\n\nNow review this function and point out possible bugs or logic errors. Be clear and concise."
+  },
+  "performance": {
+    "simple": "Review the following code for any performance bottlenecks or optimization opportunities. Suggest improvements.\n\nCode:\n{code}",
+    "complex": "Function Name:\n{function}\n\nContext:\n{context}\n\nDiff Summary:\n{diff_summary}\n\nAnalyze the function for any performance issues and suggest optimizations."
+  },
+  "best_practices": {
+    "simple": "Review the following code for adherence to software engineering best practices. Highlight areas that could be improved.\n\nCode:\n{code}",
+    "complex": "Function Name:\n{function}\n\nContext:\n{context}\n\nDiff Summary:\n{diff_summary}\n\nEvaluate the function against software engineering best practices."
+  },
+  "summarize": {
+    "simple": "You are a senior software engineer. Summarize the following code diff in a concise, high-level way for review context. Do not repeat raw code. Focus on explaining what was changed and why, using plain language.\n\n Diff:\n{diff}",
+    "complex": "You are a senior software engineer. Summarize the following code diff in a concise, high-level way for review context. Do not repeat raw code. Focus on explaining what was changed and why, using plain language.\n\n Diff:\n{diff}"
+  }
 }

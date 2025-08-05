@@ -1,3 +1,5 @@
+from http.cookiejar import request_port
+
 from pydantic import BaseModel
 from typing import List, Optional
 from .enums import PlatformType, TaskStatus, ReviewStrategyName, ReviewFactor, ErrorCode, ReviewFactor
@@ -7,6 +9,7 @@ class AnalyzePRRequest(BaseModel):
     repo_url: str
     pr_number: int
     token: Optional[str] = None
+    pr_review_strategy: ReviewStrategyName
 
 class PRReviewStatusRequest(BaseModel):
     platformType: PlatformType
@@ -21,6 +24,7 @@ class AnalyzePRTaskPayload(BaseModel):
     pr_number: int
     token: Optional[str] = None
     status: TaskStatus
+    pr_review_strategy: str
 
 class AnalyzePRResponse(BaseModel):
     task_id: str
@@ -73,5 +77,14 @@ class ReviewStrategyContext:
 
 class SimpleLLMReviewStrategyContext(ReviewStrategyContext):
     def __init__(self, factors: List[ReviewFactor]):
-        super().__init__(strategy_name=ReviewStrategyName.SIMPLE_LLM)
+        super().__init__(strategy_name=ReviewStrategyName.SIMPLE_LLM_STRATEGY)
         self.factors = factors
+
+class ComplicatedLLMReviewStrategyContext(ReviewStrategyContext):
+    def __init__(self, factors: List[ReviewFactor], repo_url: str, pr_number: int, platform: PlatformType, token: Optional[str]):
+        super().__init__(strategy_name=ReviewStrategyName.COMPLICATED_LLM_STRATEGY)
+        self.factors = factors
+        self.repo_url = repo_url
+        self.pr_number = pr_number
+        self.platform = platform
+        self.token = token

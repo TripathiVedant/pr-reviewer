@@ -1,6 +1,7 @@
 import os
 import json
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, AzureChatOpenAI
+from pydantic import SecretStr
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
 # from langchain.output_parsers.openai_tools import JsonOutputToolsParser
@@ -20,7 +21,7 @@ class SimpleLLMChainExecutor:
         self.prompts = self._load_prompts()
         self.llm = ChatOpenAI(
             temperature=0.3,
-            model="gpt-4o-mini",
+            model="gpt-4o",
             openai_api_key=OPENAI_API_KEY, # Todo: Use Portkey if needed.
             base_url=None, # Todo: Use Portkey if needed. "https://api.portkey.ai/v1/proxy/openai"
         )
@@ -28,7 +29,12 @@ class SimpleLLMChainExecutor:
 
     def _load_prompts(self) -> dict:
         with open(PROMPT_FILE, "r") as f:
-            return json.load(f)
+            raw_prompts =  json.load(f)
+
+        simple_prompts = {}
+        for factor, prompt_variants in raw_prompts.items():
+            simple_prompts[factor] = prompt_variants.get("simple")
+        return simple_prompts
 
     def build_chain(self, factor: str) -> Runnable:
         # Prompts can be loaded from a database in future.

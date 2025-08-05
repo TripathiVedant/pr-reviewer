@@ -22,7 +22,8 @@ class ReviewFactor(str, Enum):
     BEST_PRACTICES = "best_practices"
 
 class ReviewStrategyName(str, Enum):
-    SIMPLE_LLM = "simple_llm"
+    SIMPLE_LLM_STRATEGY = "simple_llm_strategy"
+    COMPLICATED_LLM_STRATEGY = "complicated_llm_strategy"
     # Add more as needed
 
 class ErrorCode(str, Enum):

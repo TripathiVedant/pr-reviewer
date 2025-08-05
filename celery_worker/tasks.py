@@ -2,18 +2,19 @@ import asyncio
 from shared.dao.task_dao import TaskDAO
 from shared.models.enums import TaskStatus, ErrorCode
 from shared.models.payloads import ErrorResult
-from .celery_app import celery_app
+from shared.strategies.review_strategies.complicated_llm_review_strategy import ComplicatedLLMReviewStrategy
+from .celery_app import app
 import logging
 from shared.integrations.platform_factory import PlatformFetcherFactory
 from shared.models.enums import ReviewFactor
-from shared.models.payloads import SimpleLLMReviewStrategyContext
+from shared.models.payloads import SimpleLLMReviewStrategyContext, ComplicatedLLMReviewStrategyContext
 from shared.strategies.review_strategies.review_strategy_factory import ReviewStrategyFactory
 from shared.exceptions.fetcher_exceptions import FetcherException
 
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name="celery_worker.tasks.analyze_pr_task")
+@app.task(name="celery_worker.tasks.analyze_pr_task")
 def analyze_pr_task(request_data):
     logger.info(f"event: analyze_pr_task, msg: Starting for Identifier: request_data={request_data}")
     """
@@ -51,13 +52,14 @@ def analyze_pr_task(request_data):
         platform_type = getattr(task, 'platformType', None)
         repo_url = getattr(task, 'repo_url', None)
         pr_number = getattr(task, 'pr_number', None)
+        pr_review_strategy = request_data.get('pr_review_strategy', "complicated")
         token = request_data.get('token', None)
 
         fetcher = PlatformFetcherFactory.get_fetcher(platform_type)
         pr_data = fetcher.fetch_pr_data(repo_url, pr_number, token)
         logger.info(f"Fetched PR data for repo {repo_url} and PR {pr_number}")
 
-        # Step 5: Run AI code analysis (mocked for now)
+        # Step 5: Run AI code analysis
         # Hardcoded review factors for now — can be made configurable per task/request in the future
         factors = [
             ReviewFactor.CODE_STYLE,
@@ -67,8 +69,17 @@ def analyze_pr_task(request_data):
         ]
 
         # Can use other strategies as well, based on different factors/requests.
-        context = SimpleLLMReviewStrategyContext(factors=factors)
-        review_strategy = ReviewStrategyFactory.get_strategy(context)
+        context_kwargs = {
+            "factors": factors,
+            "repo_url": repo_url,
+            "pr_number": pr_number,
+            "platform": platform_type,
+            "token": token,
+            # include any other fields required by the context class
+        }
+
+        review_strategy, context = ReviewStrategyFactory.get_strategy_by_name(pr_review_strategy, context_kwargs=context_kwargs)
+
         review_output = asyncio.run(review_strategy.review(pr_data["diff"], pr_data["files"], context))
         result = review_output.model_dump()
         
